@@ -19,7 +19,7 @@ namespace PusherTest
 			var infoTb = FindViewById<EditText>(Resource.Id.infoTb);
 
 			pusher = new Pusher("dc777df44df8be24ae85", new Handler(Looper.MainLooper));
-			pusher.ConnectAsync();
+			pusher.ConnectAsync(5000, TimeoutAction.CloseConnection);
 			pusher.Connected += (sender) =>
 			{
 				RunOnUiThread(() =>
@@ -43,7 +43,7 @@ namespace PusherTest
 		{
 			base.OnDestroy();
 			pusher.UnbindAll();
-			pusher.Disconnect();
+			pusher.DisconnectAsync();
 		}
 	}
 }

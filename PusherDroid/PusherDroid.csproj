@@ -81,6 +81,7 @@
     <Compile Include="Util\Constants.cs" />
     <Compile Include="Util\Settings.cs" />
     <Compile Include="Util\Extensions.cs" />
+    <Compile Include="Connection\TimeoutAction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

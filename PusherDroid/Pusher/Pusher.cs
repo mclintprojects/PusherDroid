@@ -28,7 +28,6 @@ namespace PusherDroid
 	/// </summary>
 	public class Pusher : EventEmitter, IPusher, ITriggerChannels
 	{
-		public bool IsConnected;
 		/// <summary>
 		/// Fires when a connection has been established with the Pusher Server
 		/// </summary>
@@ -111,7 +110,6 @@ namespace PusherDroid
 
 				Disconnected?.Invoke(this);
 				Handler?.Post(() => ConnectionStateChanged?.Invoke(this, state));
-				IsConnected = false;
 			}
 			else
 			{
@@ -166,13 +164,15 @@ namespace PusherDroid
 
 		/// <summary>
 		/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
+		/// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
+		/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
 		/// </summary>
-		public async Task ConnectAsync()
+		public Task ConnectAsync(long timeout = 0, TimeoutAction timeoutAction = TimeoutAction.Ignore)
 		{
 			// Prevent multiple concurrent connections
 			lock (_lockingObject)
 			{
-				Task.Run(() =>
+				return Task.Run(() =>
 				{
 					// Ensure we only ever attempt to connect once
 					if (_connection != null)
@@ -188,7 +188,7 @@ namespace PusherDroid
 					var url = $"{scheme}{_options.Host}/app/{_applicationKey}?protocol={Settings.ProtocolVersion}&client={Settings.ClientName}&version={Settings.VersionNumber}";
 
 					_connection = new Connection(this, url);
-					_connection.Connect();
+					_connection.Connect(timeout, timeoutAction);
 				});
 
 			}
@@ -197,14 +197,18 @@ namespace PusherDroid
 		/// <summary>
 		/// Start the disconnection from the Pusher Server.  When completed, the <see cref="Disconnected"/> event will fire.
 		/// </summary>
-		public void Disconnect()
+		public Task DisconnectAsync()
 		{
-			if (_connection != null)
+			return Task.Run(() =>
 			{
-				MarkChannelsAsUnsubscribed();
-				_connection.Disconnect();
-				_connection = null;
-			}
+				if (_connection != null)
+				{
+					MarkChannelsAsUnsubscribed();
+					_connection.Disconnect();
+					_connection = null;
+				}
+
+			});
 		}
 
 		/// <summary>

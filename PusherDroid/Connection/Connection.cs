@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Android.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,7 +28,13 @@ namespace PusherDroid
 		internal string SocketId => _socketId;
 
 		internal ConnectionState State => _state;
+
 		internal bool IsConnected => State == ConnectionState.Connected;
+
+		private System.Timers.Timer timer;
+
+		private long timeout;
+		private TimeoutAction timeoutAction;
 
 		public Connection(IPusher pusher, string url)
 		{
@@ -35,14 +42,16 @@ namespace PusherDroid
 			_url = url;
 		}
 
-		internal void Connect()
+		internal void Connect(long timeout = 0, TimeoutAction timeoutAction = TimeoutAction.Ignore)
 		{
 			// TODO: Add 'connecting_in' event
-			var msg = $"Connecting to: {_url}";
-			Log.Info(Constants.LOG_NAME, msg);
+			Log.Info(Constants.LOG_NAME, $"Connecting to: {_url}");
 
 			ChangeState(ConnectionState.Initialized);
 			_allowReconnect = true;
+			this.timeout = timeout;
+			this.timeoutAction = timeoutAction;
+			timer = new System.Timers.Timer(timeout);
 
 			_websocket = new WebSocket(_url)
 			{
@@ -57,6 +66,33 @@ namespace PusherDroid
 			ChangeState(ConnectionState.Connecting);
 
 			_websocket.Open();
+
+			if (timeout != 0) // If the user provided a timeout value
+				StartTimeoutCountdown();
+		}
+
+		void StartTimeoutCountdown()
+		{
+			Task.Run(() =>
+			{
+				timer.Enabled = true;
+				timer.AutoReset = false;
+				timer.Elapsed += (sender, e) =>
+				{
+					// If the connection still hasn't connected aftert he specified time
+					if (!IsConnected)
+					{
+						ChangeState(ConnectionState.TimedOut);
+						timer.Enabled = false;
+						if (timeoutAction == TimeoutAction.CloseConnection)
+						{
+							_allowReconnect = false;
+							_websocket.Close();
+							Disconnect();
+						}
+					}
+				};
+			});
 		}
 
 		internal void Disconnect()
@@ -80,7 +116,7 @@ namespace PusherDroid
 			if (IsConnected)
 			{
 				Log.Info(Constants.LOG_NAME, $"Sending: {message}");
-				_websocket.Send(message);
+				_websocket?.Send(message);
 			}
 		}
 
@@ -173,6 +209,7 @@ namespace PusherDroid
 		private void websocket_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
 		{
 			Log.Error(Constants.LOG_NAME, $"Error: {e.Exception}");
+			ChangeState(ConnectionState.Failed);
 
 			// TODO: What happens here? Do I need to re-connect, or do I just log the issue?
 		}
