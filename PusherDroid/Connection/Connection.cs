@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.Util;
@@ -31,10 +32,14 @@ namespace PusherDroid
 
 		internal bool IsConnected => State == ConnectionState.Connected;
 
-		private System.Timers.Timer timer;
+		private System.Timers.Timer timeoutTimer, networkTimer
+;
 
-		private long timeout;
-		private TimeoutAction timeoutAction;
+		private long connectionTimeout, networkTimeout;
+		private ConnectionTimeoutAction connectionTimeoutAction;
+		private NetworkUnavailableAction networkUnavailableAction;
+
+		public HttpClient client = new HttpClient();
 
 		public Connection(IPusher pusher, string url)
 		{
@@ -42,21 +47,24 @@ namespace PusherDroid
 			_url = url;
 		}
 
-		internal void Connect(long timeout = -1, TimeoutAction timeoutAction = TimeoutAction.Ignore)
+		internal void Connect(long connectionTimeout, ConnectionTimeoutAction timeoutAction, long networkTimeout, NetworkUnavailableAction networkUnavailableAction)
 		{
 			// TODO: Add 'connecting_in' event
 			Log.Info(Constants.LOG_NAME, $"Connecting to: {_url}");
 
 			ChangeState(ConnectionState.Initialized);
 			_allowReconnect = true;
-			this.timeout = timeout;
-			this.timeoutAction = timeoutAction;
-			timer = new System.Timers.Timer(timeout);
+			this.connectionTimeout = connectionTimeout;
+			this.connectionTimeoutAction = timeoutAction;
+			this.networkTimeout = networkTimeout;
+			this.networkUnavailableAction = networkUnavailableAction;
+			timeoutTimer = new System.Timers.Timer(connectionTimeout);
+			networkTimer = new System.Timers.Timer(networkTimeout);
 
 			_websocket = new WebSocket(_url)
 			{
 				EnableAutoSendPing = true,
-				AutoSendPingInterval = 1
+				AutoSendPingInterval = 8
 			};
 			_websocket.Opened += websocket_Opened;
 			_websocket.Error += websocket_Error;
@@ -65,30 +73,92 @@ namespace PusherDroid
 
 			ChangeState(ConnectionState.Connecting);
 
-			_websocket.Open();
-
-			if (timeout != -1) // If the user provided a timeout value
+			if (connectionTimeout != -1) // If the user provided a timeout value
 				StartTimeoutCountdown();
+
+
+			// Websocket does not notice when the internet dies, this is a temp workaround until there's a fix
+			if (networkTimeout != -1)
+				StartCheckForInternetConnection();
+
+			_websocket.Open();
+		}
+
+		void StartCheckForInternetConnection()
+		{
+			Task.Run(() =>
+			{
+				networkTimer.AutoReset = true;
+				networkTimer.Elapsed += NetworkTimer_Elapsed;
+				networkTimer.Enabled = true;
+			});
+		}
+
+		async void NetworkTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			if (!await IsInternetAvailable())
+			{
+				ChangeState(ConnectionState.NetworkUnavailable);
+				switch (networkUnavailableAction)
+				{
+					case NetworkUnavailableAction.CloseConnection:
+						if (_websocket != null) // Do not disconnect if its already disconnected
+						{
+							Disconnect();
+							networkTimer.Enabled = false;
+						}
+						break;
+
+					case NetworkUnavailableAction.StopCheckingForAvailability:
+						networkTimer.Enabled = false;
+						break;
+				}
+			}
+
+			else
+			{
+				if (!IsConnected)
+				{
+					Disconnect();
+					ChangeState(ConnectionState.NetworkAvailable);
+					Connect(connectionTimeout, connectionTimeoutAction, networkTimeout, networkUnavailableAction);
+				}
+			}
 		}
 
 		void StartTimeoutCountdown()
 		{
 			Task.Run(() =>
 			{
-				timer.Enabled = true;
-				timer.AutoReset = false;
-				timer.Elapsed += (sender, e) =>
-				{
-					// If the connection still hasn't connected aftert he specified time
-					if (!IsConnected)
-					{
-						ChangeState(ConnectionState.TimedOut);
-						timer.Enabled = false;
-						if (timeoutAction == TimeoutAction.CloseConnection)
-							Disconnect();
-					}
-				};
+				timeoutTimer.AutoReset = false;
+				timeoutTimer.Elapsed += TimeoutTimer_Elapsed;
+				timeoutTimer.Enabled = true;
 			});
+		}
+
+		void TimeoutTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			// If the connection still hasn't connected aftert he specified time
+			if (!IsConnected)
+			{
+				ChangeState(ConnectionState.TimedOut);
+				timeoutTimer.Enabled = false;
+				if (connectionTimeoutAction == ConnectionTimeoutAction.CloseConnection)
+					Disconnect();
+			}
+		}
+
+		private async Task<bool> IsInternetAvailable()
+		{
+			try
+			{
+				var response = await client.GetAsync(@"http://www.google.com", new CancellationTokenSource(TimeSpan.FromMilliseconds(5000)).Token);
+				return response.IsSuccessStatusCode;
+			}
+			catch
+			{
+				return false;
+			}
 		}
 
 		internal void Disconnect()
@@ -101,8 +171,11 @@ namespace PusherDroid
 			_websocket.Error -= websocket_Error;
 			_websocket.Closed -= websocket_Closed;
 			_websocket.MessageReceived -= websocket_MessageReceived;
+			timeoutTimer.Elapsed -= TimeoutTimer_Elapsed;
+			networkTimer.Elapsed -= NetworkTimer_Elapsed;
 
-			_websocket.Close();
+			_websocket.Dispose();
+			_websocket = null;
 
 			ChangeState(ConnectionState.Disconnected);
 		}
@@ -198,7 +271,7 @@ namespace PusherDroid
 				ChangeState(ConnectionState.WaitingToReconnect);
 				Thread.Sleep(_backOffMillis);
 				_backOffMillis = Math.Min(MAX_BACKOFF_MILLIS, _backOffMillis + BACK_OFF_MILLIS_INCREMENT);
-				Connect();
+				Connect(connectionTimeout, connectionTimeoutAction, networkTimeout, networkUnavailableAction);
 			}
 		}
 

@@ -42,6 +42,16 @@ namespace PusherDroid
 		/// <summary>
 		/// The state when opening the connection fails. Usually due to no internet connection.
 		/// </summary>
-		Failed
+		Failed,
+
+		/// <summary>
+		/// The state when the network is unavailable.
+		/// </summary>
+		NetworkUnavailable,
+
+		/// <summary>
+		/// The state when the network is available.
+		/// </summary>
+		NetworkAvailable
 	}
 }

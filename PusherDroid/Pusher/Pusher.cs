@@ -97,6 +97,15 @@ namespace PusherDroid
 			_options = options ?? new PusherOptions { Encrypted = false };
 		}
 
+		public static T ParseMessageToObject<T>(string json, T objectLikeThis)
+		{
+			if (String.IsNullOrWhiteSpace(json))
+				throw new ArgumentNullException(nameof(json));
+
+			var actualJson = json.Remove(0, 1).Remove(json.Length - 2, 1);
+			return JsonConvert.DeserializeAnonymousType(actualJson, objectLikeThis);
+		}
+
 		void IPusher.ConnectionStateChanged(ConnectionState state)
 		{
 			if (state == ConnectionState.Connected)
@@ -167,7 +176,7 @@ namespace PusherDroid
 		/// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
 		/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
 		/// </summary>
-		public Task ConnectAsync(long timeout = -1, TimeoutAction timeoutAction = TimeoutAction.Ignore)
+		public Task ConnectAsync(long connectionTimeout = -1, ConnectionTimeoutAction timeoutAction = ConnectionTimeoutAction.Ignore, long networkTimeout = -1, NetworkUnavailableAction networkUnavailableAction = NetworkUnavailableAction.Ignore)
 		{
 			// Prevent multiple concurrent connections
 			lock (_lockingObject)
@@ -188,9 +197,8 @@ namespace PusherDroid
 					var url = $"{scheme}{_options.Host}/app/{_applicationKey}?protocol={Settings.ProtocolVersion}&client={Settings.ClientName}&version={Settings.VersionNumber}";
 
 					_connection = new Connection(this, url);
-					_connection.Connect(timeout, timeoutAction);
+					_connection.Connect(connectionTimeout, timeoutAction, networkTimeout, networkUnavailableAction);
 				});
-
 			}
 		}
 

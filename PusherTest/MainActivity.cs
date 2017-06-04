@@ -15,11 +15,10 @@ namespace PusherTest
 		{
 			base.OnCreate(savedInstanceState);
 			SetContentView(Resource.Layout.Main);
-			Toast.MakeText(this, $"Layout inflated.", ToastLength.Long).Show();
 			var infoTb = FindViewById<EditText>(Resource.Id.infoTb);
 
 			pusher = new Pusher("dc777df44df8be24ae85", new Handler(Looper.MainLooper));
-			pusher.ConnectAsync(5000, TimeoutAction.CloseConnection);
+			pusher.ConnectAsync(15000, ConnectionTimeoutAction.CloseConnection, 20000, NetworkUnavailableAction.Ignore);
 			pusher.Connected += (sender) =>
 			{
 				RunOnUiThread(() =>
@@ -28,7 +27,7 @@ namespace PusherTest
 					var channel = pusher.Subscribe("my-channel");
 					channel.Bind("my-event", (obj) =>
 					{
-						var car = JsonConvert.DeserializeAnonymousType(obj.message, new Car());
+						var car = Pusher.ParseMessageToObject(obj.message.Value as string, new Car());
 						infoTb.AppendLine($"{car.name}, {car.color}, {car.make}");
 					});
 				});

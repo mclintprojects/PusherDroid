@@ -46,11 +46,12 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\netstandard1.3\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SuperSocket.ClientEngine">
-      <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.8.0.10\lib\monoandroid10\SuperSocket.ClientEngine.dll</HintPath>
-    </Reference>
     <Reference Include="WebSocket4Net">
       <HintPath>..\packages\WebSocket4Net.0.15.0-beta7\lib\monoandroid10\WebSocket4Net.dll</HintPath>
+    </Reference>
+    <Reference Include="SuperSocket.ClientEngine">
+      <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.8.0.11\lib\monoandroid10\SuperSocket.ClientEngine.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -81,7 +82,8 @@
     <Compile Include="Util\Constants.cs" />
     <Compile Include="Util\Settings.cs" />
     <Compile Include="Util\Extensions.cs" />
-    <Compile Include="Connection\TimeoutAction.cs" />
+    <Compile Include="Connection\ConnectionTimeoutAction.cs" />
+    <Compile Include="Connection\NetworkUnavailableAction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
