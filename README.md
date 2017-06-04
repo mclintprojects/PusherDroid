@@ -33,7 +33,7 @@ static void _pusher_Error(object sender, PusherException error)
     Console.WriteLine("Pusher Error: " + error.ToString());
 }
 ```
-and Handler(Looper.MainLooper) allows events to be posted on the UI thread automatically to prevent you from littering your code with multiple RunOnUiThread(() => {}); statements.
+and `Handler(Looper.MainLooper)` allows events to be posted on the UI thread automatically to prevent you from littering your code with multiple `RunOnUiThread(() => {});` statements.
 
 Or if you have an authentication endpoint for private or presence channels:
 
