@@ -17,7 +17,20 @@ Clone or download the github project, build the solution and add a reference of 
 _pusher = new Pusher("YOUR_APP_KEY", new Handler(Looper.MainLooper));
 _pusher.ConnectionStateChanged += Pusher_ConnectionStateChanged;
 _pusher.Error += Pusher_Error;
-_pusher.ConnectAsync();
+
+/// <summary>
+/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
+/// <param name="timeout">Defaults to -1 meaning no timeout.</param>
+/// <param name="timeoutAction">Defaults to TimeoutAction.Ignore which ignores the timeout.</param>
+/// </summary>
+_pusher.ConnectAsync(); 
+
+/// <summary>
+/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
+/// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
+/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
+/// </summary>
+_pusher.ConnectionAsync(3000, TimeoutAction.CloseConnection); 
 ```
 
 where `_pusher_ConnectionStateChanged` and `_pusher_Error` are custom event handlers such as
