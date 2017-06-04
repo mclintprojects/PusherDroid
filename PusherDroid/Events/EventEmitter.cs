@@ -17,7 +17,7 @@ namespace PusherDroid
 		/// </summary>
 		/// <param name="eventName">The Event Name to listen for</param>
 		/// <param name="listener">The action to perform when the event occurs</param>
-		public EventEmitter Bind(string eventName, Action<dynamic> listener)
+		public void Bind(string eventName, Action<dynamic> listener)
 		{
 			if (_eventListeners.ContainsKey(eventName))
 			{
@@ -28,14 +28,12 @@ namespace PusherDroid
 				var listeners = new List<Action<dynamic>> { listener };
 				_eventListeners.Add(eventName, listeners);
 			}
-
-			return this;
 		}
 
 		/// <summary>
 		/// Binds to ALL event
 		/// </summary>
-		/// <param name="listener">The action to perform when the any event occurs</param>
+		/// <param name="listener">The action to perform when any event occurs</param>
 		public void BindAll(Action<string, dynamic> listener)
 		{
 			_generalListeners.Add(listener);

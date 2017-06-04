@@ -42,7 +42,7 @@ namespace PusherDroid
 			_url = url;
 		}
 
-		internal void Connect(long timeout = 0, TimeoutAction timeoutAction = TimeoutAction.Ignore)
+		internal void Connect(long timeout = -1, TimeoutAction timeoutAction = TimeoutAction.Ignore)
 		{
 			// TODO: Add 'connecting_in' event
 			Log.Info(Constants.LOG_NAME, $"Connecting to: {_url}");
@@ -67,7 +67,7 @@ namespace PusherDroid
 
 			_websocket.Open();
 
-			if (timeout != 0) // If the user provided a timeout value
+			if (timeout != -1) // If the user provided a timeout value
 				StartTimeoutCountdown();
 		}
 
@@ -85,11 +85,7 @@ namespace PusherDroid
 						ChangeState(ConnectionState.TimedOut);
 						timer.Enabled = false;
 						if (timeoutAction == TimeoutAction.CloseConnection)
-						{
-							_allowReconnect = false;
-							_websocket.Close();
 							Disconnect();
-						}
 					}
 				};
 			});
@@ -124,7 +120,7 @@ namespace PusherDroid
 		{
 			Log.Info(Constants.LOG_NAME, $"Websocket message received: {e.Message} ");
 
-			// DeserializeAnonymousType will throw and error when an error comes back from pusher
+			// DeserializeAnonymousType will throw an error when an error comes back from pusher
 			// It stems from the fact that the data object is a string normally except when an error is sent back
 			// then it's an object.
 
@@ -195,7 +191,7 @@ namespace PusherDroid
 			Log.Info(Constants.LOG_NAME, "Websocket connection has been closed");
 
 			ChangeState(ConnectionState.Disconnected);
-			_websocket = null;
+			_websocket.Dispose();
 
 			if (_allowReconnect)
 			{

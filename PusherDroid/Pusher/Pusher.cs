@@ -167,7 +167,7 @@ namespace PusherDroid
 		/// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
 		/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
 		/// </summary>
-		public Task ConnectAsync(long timeout = 0, TimeoutAction timeoutAction = TimeoutAction.Ignore)
+		public Task ConnectAsync(long timeout = -1, TimeoutAction timeoutAction = TimeoutAction.Ignore)
 		{
 			// Prevent multiple concurrent connections
 			lock (_lockingObject)
