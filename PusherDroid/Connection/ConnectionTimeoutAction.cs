@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 namespace PusherDroid
 {
-	public enum TimeoutAction
+	public enum ConnectionTimeoutAction
 	{
 		Ignore,
 		CloseConnection
