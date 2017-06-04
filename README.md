@@ -15,20 +15,20 @@ Clone or download the github project, build the solution and add a reference of 
 
 ```cs
 _pusher = new Pusher("YOUR_APP_KEY", new Handler(Looper.MainLooper));
-_pusher.ConnectionStateChanged += _pusher_ConnectionStateChanged;
-_pusher.Error += _pusher_Error;
-_pusher.Connect();
+_pusher.ConnectionStateChanged += Pusher_ConnectionStateChanged;
+_pusher.Error += Pusher_Error;
+_pusher.ConnectAsync();
 ```
 
 where `_pusher_ConnectionStateChanged` and `_pusher_Error` are custom event handlers such as
 
 ```cs
-static void _pusher_ConnectionStateChanged(object sender, ConnectionState state)
+static void Pusher_ConnectionStateChanged(object sender, ConnectionState state)
 {
     Console.WriteLine("Connection state: " + state.ToString());
 }
 
-static void _pusher_Error(object sender, PusherException error)
+static void Pusher_Error(object sender, PusherException error)
 {
     Console.WriteLine("Pusher Error: " + error.ToString());
 }
@@ -38,7 +38,7 @@ and `Handler(Looper.MainLooper)` allows events to be posted on the UI thread aut
 Or if you have an authentication endpoint for private or presence channels:
 
 ```cs
-_pusher = new Pusher("YOUR_APP_KEY", new PusherOptions(){
+_pusher = new Pusher("YOUR_APP_KEY", new Handler(Looper.MainLooper) new PusherOptions(){
     Authorizer = new HttpAuthorizer("YOUR_ENDPOINT")
 });
 _pusher.ConnectionStateChanged += _pusher_ConnectionStateChanged;
@@ -75,7 +75,7 @@ static void _myChannel_Subscribed(object sender)
 ### Bind to an event
 
 ```cs
-_myChannel.Bind("my-event", (dynamic data) =>
+_myChannel.Bind("my-event", (data) =>
 {
     Console.WriteLine(data.message);
 });
