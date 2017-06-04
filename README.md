@@ -18,19 +18,17 @@ _pusher = new Pusher("YOUR_APP_KEY", new Handler(Looper.MainLooper));
 _pusher.ConnectionStateChanged += Pusher_ConnectionStateChanged;
 _pusher.Error += Pusher_Error;
 
-/// <summary>
-/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
-/// <param name="timeout">Defaults to -1 meaning no timeout.</param>
-/// <param name="timeoutAction">Defaults to TimeoutAction.Ignore which ignores the timeout.</param>
-/// </summary>
+// This is the default method which automatically sets the defaults for the its parameters -> (-1, TimeoutAction.Ignore)
 _pusher.ConnectAsync(); 
 
+or
+
+Use this instead if you want to set a timeout.
 /// <summary>
-/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
 /// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
-/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
+/// <param name="timeoutAction">The action that should happen when the connection times out. Either `TimeoutAction.Ignore` or `TimeoutAction.CloseConnection`</param>
 /// </summary>
-_pusher.ConnectionAsync(3000, TimeoutAction.CloseConnection); 
+_pusher.ConnectAsync(3000, TimeoutAction.CloseConnection); 
 ```
 
 where `_pusher_ConnectionStateChanged` and `_pusher_Error` are custom event handlers such as
