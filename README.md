@@ -92,6 +92,10 @@ static void _myChannel_Subscribed(object sender)
 _myChannel.Bind("my-event", (data) =>
 {
     Console.WriteLine(data.message);
+    
+    // If the pusher message is json that you want to parse to a custom C# object in this case my `Car` class.
+    var car = Pusher.ParseMessageToObject(data.message.Value as string, new Car());
+    infoTb.AppendLine($"{car.Name}, {car.Color}, {car.Make}");
 });
 ```
 
