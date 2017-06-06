@@ -1,10 +1,10 @@
 ﻿using System;
 namespace PusherTest
 {
-	public class Car
-	{
-		public string name { get; set; }
-		public string make { get; set; }
-		public string color { get; set; }
-	}
+    public class Car
+    {
+        public string Name { get; set; }
+        public string Make { get; set; }
+        public string Color { get; set; }
+    }
 }
