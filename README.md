@@ -23,12 +23,15 @@ _pusher.ConnectAsync();
 
 or
 
-Use this instead if you want to set a timeout.
+Use this instead if you want to set a connection timeout, network unavailability timeout, connection timeout action, or network unavailable action.
 /// <summary>
-/// <param name="timeout">Time in milliseconds that if connection isn't established should timeout.</param>
-/// <param name="timeoutAction">The action that should happen when the connection times out. Either `TimeoutAction.Ignore` or `TimeoutAction.CloseConnection`</param>
+/// Start the connection to the Pusher Server.  When completed, the <see cref="Connected"/> event will fire.
+/// <param name="connectionTimeout">Time in milliseconds that if connection isn't established should timeout. Recommended is 10000ms.</param>
+/// <param name="timeoutAction">The action that should happen when the connection times out.</param>
+/// <paramref name="networkTimeout">Time in milliseconds that the network availability checker should repeatedly check for network availability. Recommended is 20000ms.</paramref>
+/// <paramref name="networkUnavailableAction">The action that should happen when when the network is unavailable.</paramref>
 /// </summary>
-_pusher.ConnectAsync(3000, TimeoutAction.CloseConnection); 
+_pusher.ConnectAsync(10000, ConnectionTimeoutAction.CloseConnection, 20000, NetworkUnavailableAction.CloseConnection); 
 ```
 
 where `_pusher_ConnectionStateChanged` and `_pusher_Error` are custom event handlers such as
